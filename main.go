@@ -1,9 +1,13 @@
 package main
 
 import (
+	"Eino-example/create_tool"
 	"context"
+	"fmt"
 	"github.com/cloudwego/eino-ext/components/model/openai"
-	"github.com/cloudwego/eino/components/prompt"
+	"github.com/cloudwego/eino-ext/components/tool/httprequest/get"
+	"github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"github.com/joho/godotenv"
 	"io"
@@ -13,14 +17,15 @@ import (
 
 func main() {
 	// 加载 .env 文件
-	// 加载 .env 文件
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Error loading .env file:", err)
+		log.Fatal("Error loading .env file:", err)
 	}
 	// 读取环境变量
 	baseUrl := os.Getenv("OPENAI_BASE_URL")
 	apiKey := os.Getenv("OPENAI_API_KEY")
+
+	ctx := context.TODO()
 
 	chatModel, err := openai.NewChatModel(context.TODO(), &openai.ChatModelConfig{
 		Model:   "qwen-flash", // 使用的模型版本
@@ -28,48 +33,80 @@ func main() {
 		BaseURL: baseUrl,
 	})
 	if err != nil {
-		log.Print(err)
+		log.Fatal(err)
 	}
 
-	// 创建模板，使用 FString 格式
-	template := prompt.FromMessages(schema.FString,
-		// 系统消息模板
-		schema.SystemMessage("你是一个{role}。你需要用{style}的语气回答问题。你的目标是帮助程序员保持积极乐观的心态，提供技术建议的同时也要关注他们的心理健康。"),
+	// 创建工具
+	//searchTool, err := duckduckgo.NewTextSearchTool(context.TODO(), &duckduckgo.Config{})
+	//if err != nil {
+	//	log.Fatal(err)
+	//
+	//}
 
-		// 插入需要的对话历史（新对话的话这里不填）
-		schema.MessagesPlaceholder("chat_history", true),
+	// 第一种创建工具的方式：使用NewTool方式创建
+	addTodoTool := create_tool.GetAddTodoTool()
 
-		// 用户消息模板
-		schema.UserMessage("问题: {question}"),
-	)
+	//第二种创建工具的方式：使用InferTool方式创建
+	updateTodoTool := create_tool.GetUpdateTodoTool()
 
-	// 使用模板生成消息
-	messages, err := template.Format(context.Background(), map[string]any{
-		"role":     "程序员鼓励师",
-		"style":    "积极、温暖且专业",
-		"question": "我的代码一直报错，感觉好沮丧，该怎么办？",
-		// 对话历史（这个例子里模拟两轮对话历史）
-		"chat_history": []*schema.Message{
-			schema.UserMessage("你好"),
-			schema.AssistantMessage("嘿！我是你的程序员鼓励师！记住，每个优秀的程序员都是从 Debug 中成长起来的。有什么我可以帮你的吗？", nil),
-			schema.UserMessage("我觉得自己写的代码太烂了"),
-			schema.AssistantMessage("每个程序员都经历过这个阶段！重要的是你在不断学习和进步。让我们一起看看代码，我相信通过重构和优化，它会变得更好。记住，Rome wasn't built in a day，代码质量是通过持续改进来提升的。", nil),
+	//第三种创建工具的方式：实现InvokableTool接口
+	listTodoTool := &create_tool.ListTodoTool{}
+
+	// 第四种创建工具的方式：使用官方现有的工具
+	newTool, err := get.NewTool(ctx, &get.Config{})
+	if err != nil {
+		log.Fatal(err)
+
+	}
+
+	// 创建ToolsNode
+	conf := &compose.ToolsNodeConfig{
+		Tools: []tool.BaseTool{newTool, addTodoTool, updateTodoTool, listTodoTool}, // 工具可以是 InvokableTool 或 StreamableTool
+	}
+	toolsNode, err := compose.NewToolNode(context.Background(), conf)
+
+	// 获取工具信息并绑定到 ChatModel
+	toolInfos := make([]*schema.ToolInfo, 0, 1)
+	for _, tool := range conf.Tools {
+		info, err := tool.Info(context.TODO())
+		if err != nil {
+			log.Fatal(err)
+		}
+		toolInfos = append(toolInfos, info)
+	}
+	err = chatModel.BindTools(toolInfos)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 构建完整的处理链
+	chain := compose.NewChain[[]*schema.Message, []*schema.Message]()
+	chain.
+		AppendChatModel(chatModel, compose.WithNodeName("chat_model")).
+		AppendToolsNode(toolsNode, compose.WithNodeName("tools"))
+
+	// 编译并运行 chain
+	agent, err := chain.Compile(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 运行示例
+	resp, err := agent.Invoke(ctx, []*schema.Message{
+		{
+			Role:    schema.User,
+			Content: "更新学习英语任务",
 		},
 	})
-	// 完整输出示例
-	result, err := chatModel.Generate(context.TODO(), messages)
 	if err != nil {
-		log.Print(err)
+		log.Fatal(err)
 	}
-	println(result.Content)
 
-	// 流式处理
-	streamResult2, err := chatModel.Stream(context.TODO(), messages)
-	if err != nil {
-		log.Print(err)
-		return
+	// 输出结果
+	for _, msg := range resp {
+		fmt.Println(msg.Content)
 	}
-	reportStream(streamResult2)
+
 }
 
 func reportStream(sr *schema.StreamReader[*schema.Message]) {
