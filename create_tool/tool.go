@@ -5,6 +5,7 @@ import (
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/components/tool/utils"
 	"github.com/cloudwego/eino/schema"
+	"log"
 )
 
 type TodoAddParams struct {
@@ -46,6 +47,7 @@ func GetAddTodoTool() tool.InvokableTool {
 }
 
 func UpdateTodoFunc(_ context.Context, params *TodoAddParams) (string, error) {
+	log.Println("update todo params: %+v", params)
 	// Mock处理逻辑
 	return `{"msg": "update todo success"}`, nil
 }
@@ -80,6 +82,7 @@ func (lt *ListTodoTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
 }
 
 func (lt *ListTodoTool) InvokableRun(ctx context.Context, argumentsInJSON string, opts ...tool.Option) (string, error) {
+	log.Println("查询所有待办事项，参数：%s", argumentsInJSON)
 	// Mock调用逻辑
-	return `{"todos": [{"id": "1", "content": "在2024年12月10日之前完成Eino项目演示文稿的准备工作", "started_at": 1717401600, "deadline": 1717488000, "done": false}]}`, nil
+	return `{"todos": [{"id": "1", "content": "在2024年12月10日之前完成Eino项目演示文稿的准备工作", "started_at": 1717401600, "deadline": 1717488000, "done": false},{"id": "2", "content": "在2025年11月9日之前完成学习股票K线数据", "started_at": 1717401600, "deadline": 1717488000, "done": false}]}`, nil
 }

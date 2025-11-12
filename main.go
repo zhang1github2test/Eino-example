@@ -8,6 +8,7 @@ import (
 	"github.com/cloudwego/eino-ext/components/tool/httprequest/get"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
+	"github.com/cloudwego/eino/flow/agent/react"
 	"github.com/cloudwego/eino/schema"
 	"github.com/joho/godotenv"
 	"io"
@@ -60,42 +61,21 @@ func main() {
 	}
 
 	// 创建ToolsNode
-	conf := &compose.ToolsNodeConfig{
+	conf := compose.ToolsNodeConfig{
 		Tools: []tool.BaseTool{newTool, addTodoTool, updateTodoTool, listTodoTool}, // 工具可以是 InvokableTool 或 StreamableTool
 	}
-	toolsNode, err := compose.NewToolNode(context.Background(), conf)
 
-	// 获取工具信息并绑定到 ChatModel
-	toolInfos := make([]*schema.ToolInfo, 0, 1)
-	for _, tool := range conf.Tools {
-		info, err := tool.Info(context.TODO())
-		if err != nil {
-			log.Fatal(err)
-		}
-		toolInfos = append(toolInfos, info)
-	}
-	err = chatModel.BindTools(toolInfos)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// 构建完整的处理链
-	chain := compose.NewChain[[]*schema.Message, []*schema.Message]()
-	chain.
-		AppendChatModel(chatModel, compose.WithNodeName("chat_model")).
-		AppendToolsNode(toolsNode, compose.WithNodeName("tools"))
-
-	// 编译并运行 chain
-	agent, err := chain.Compile(context.TODO())
-	if err != nil {
-		log.Fatal(err)
-	}
+	// 创建 agent
+	agent, err := react.NewAgent(ctx, &react.AgentConfig{
+		ToolCallingModel: chatModel,
+		ToolsConfig:      conf,
+	})
 
 	// 运行示例
-	resp, err := agent.Invoke(ctx, []*schema.Message{
+	resp, err := agent.Generate(ctx, []*schema.Message{
 		{
 			Role:    schema.User,
-			Content: "更新学习英语任务",
+			Content: "任务内容是：学习股票K线数据，开始时间是现在，结束是2天后。如果任务存在则更新任务，否则创建任务。",
 		},
 	})
 	if err != nil {
@@ -103,9 +83,7 @@ func main() {
 	}
 
 	// 输出结果
-	for _, msg := range resp {
-		fmt.Println(msg.Content)
-	}
+	fmt.Println(resp.Content)
 
 }
 
