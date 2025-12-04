@@ -1,11 +1,15 @@
 package main
 
 import (
-	workflow_demo "Eino-example/workflow-demo"
-	"github.com/cloudwego/eino/schema"
+	"Eino-example/knowledgeindexing"
+	"context"
+	"fmt"
+	"github.com/cloudwego/eino/components/document"
 	"github.com/joho/godotenv"
-	"io"
+	"io/fs"
 	"log"
+	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -15,22 +19,44 @@ func main() {
 		log.Fatal("Error loading .env file:", err)
 	}
 
-	workflow_demo.FlowDemo()
+	err = indexMarkdownFiles(context.Background(), "knowledgeindexing/eino-doc")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }
 
-func reportStream(sr *schema.StreamReader[*schema.Message]) {
-	defer sr.Close()
-	i := 0
-	for {
-		message, err := sr.Recv()
-		if err == io.EOF { // 流式输出结束
-			return
-		}
-		if err != nil {
-			log.Fatalf("recv failed: %v", err)
-		}
-		log.Printf("message[%d]: %+v\n", i, message)
-		i++
+func indexMarkdownFiles(ctx context.Context, dir string) error {
+	runner, err := knowledgeindexing.BuildKnowledgeIndexing(ctx)
+	if err != nil {
+		return fmt.Errorf("build index graph failed: %w", err)
 	}
+
+	// 遍历 dir 下的所有 markdown 文件
+	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fmt.Errorf("walk dir failed: %w", err)
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		if !strings.HasSuffix(path, ".md") {
+			fmt.Printf("[skip] not a markdown file: %s\n", path)
+			return nil
+		}
+
+		fmt.Printf("[start] indexing file: %s\n", path)
+
+		ids, err := runner.Invoke(ctx, document.Source{URI: path})
+		if err != nil {
+			return fmt.Errorf("invoke index graph failed: %w", err)
+		}
+
+		fmt.Printf("[done] indexing file: %s, len of parts: %d\n", path, len(ids))
+
+		return nil
+	})
+
+	return err
 }

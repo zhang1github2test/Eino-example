@@ -4,6 +4,8 @@ go 1.24.0
 
 require (
 	github.com/cloudwego/eino v0.6.0
+	github.com/cloudwego/eino-ext/components/document/loader/file v0.0.0-20251202111544-e4f4645bf07d
+	github.com/cloudwego/eino-ext/components/document/transformer/splitter/markdown v0.0.0-20251202111544-e4f4645bf07d
 	github.com/cloudwego/eino-ext/components/embedding/dashscope v0.0.0-20251202083448-dc9e24767d40
 	github.com/cloudwego/eino-ext/components/indexer/es8 v0.0.0-20251202083448-dc9e24767d40
 	github.com/cloudwego/eino-ext/components/model/openai v0.1.2
