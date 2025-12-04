@@ -51,7 +51,7 @@ func newIndexer(ctx context.Context) (idr indexer.Indexer, err error) {
 	embedder, err := newEmbedding(ctx)
 
 	// create es indexer component
-	indexer, err := es8.NewIndexer(ctx, &es8.IndexerConfig{
+	idr, err = es8.NewIndexer(ctx, &es8.IndexerConfig{
 		Client:    client,
 		Index:     indexName,
 		BatchSize: 10,
@@ -75,5 +75,5 @@ func newIndexer(ctx context.Context) (idr indexer.Indexer, err error) {
 	if err != nil {
 		log.Fatalf("NewIndexer of es8 failed, err=%v", err)
 	}
-	return indexer, err
+	return idr, err
 }
