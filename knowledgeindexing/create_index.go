@@ -3,7 +3,6 @@ package knowledgeindexing
 import (
 	"context"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/exists"
-	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/densevectorsimilarity"
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/indices/create"
@@ -43,7 +42,7 @@ func createIndex(ctx context.Context, client *elasticsearch.Client) error {
 				fieldContentDenseVector: &types.DenseVectorProperty{
 					Dims:       of(1024), // same as embedding dimensions
 					Index:      of(true),
-					Similarity: of(densevectorsimilarity.Cosine),
+					Similarity: of("cosine"),
 				},
 			},
 		},
