@@ -57,7 +57,6 @@ type ChatTemplateConfig struct {
 //	ctp - 创建的聊天模板实例
 //	err - 创建过程中可能发生的错误（当前实现始终返回nil）
 func newChatTemplate(ctx context.Context) (ctp prompt.ChatTemplate, err error) {
-	// TODO Modify component configuration here.
 	config := &ChatTemplateConfig{
 		FormatType: schema.FString,
 		Templates: []schema.MessagesTemplate{

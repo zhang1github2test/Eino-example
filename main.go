@@ -5,25 +5,29 @@ import (
 	"context"
 	"fmt"
 	"github.com/cloudwego/eino/components/document"
-	"github.com/joho/godotenv"
 	"io/fs"
-	"log"
 	"path/filepath"
+	"reflect"
 	"strings"
 )
 
+func TypeOf[T any]() reflect.Type {
+	return reflect.TypeOf((*T)(nil)).Elem()
+}
 func main() {
-	// 加载 .env 文件
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file:", err)
-	}
+	//// 加载 .env 文件
+	//err := godotenv.Load()
+	//if err != nil {
+	//	log.Fatal("Error loading .env file:", err)
+	//}
+	//
+	//err = indexMarkdownFiles(context.Background(), "knowledgeindexing/eino-doc")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
-	err = indexMarkdownFiles(context.Background(), "knowledgeindexing/eino-doc")
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	typeOf := TypeOf[int]()
+	fmt.Println(typeOf)
 }
 
 func indexMarkdownFiles(ctx context.Context, dir string) error {
