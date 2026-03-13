@@ -6,36 +6,33 @@ import (
 	"fmt"
 	"github.com/cloudwego/eino-ext/callbacks/langfuse"
 	"github.com/cloudwego/eino/callbacks"
-	"github.com/joho/godotenv"
 	"io"
-	"log"
 	"os"
 	"sync"
-	"time"
 )
 
-func main() {
-	// 加载 .env 文件
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file:", err)
-	}
-	_ = Init()
-	start := time.Now()
-	r, err := BuildWenGoAgent(context.Background())
-	resp, err := r.Invoke(context.Background(), []string{"resource/esseay/3.jpeg", "resource/esseay/2.jpeg", "resource/esseay/1.jpeg"})
-	duration := time.Since(start)
-	log.Printf("操作完成，耗时: %v", duration)
-
-	fmt.Println(resp.Content)
-	fmt.Printf("CompletionTokens: %d\n", resp.ResponseMeta.Usage.CompletionTokens)
-	fmt.Printf("TotalTokens: %d\n", resp.ResponseMeta.Usage.TotalTokens)
-	fmt.Printf("PromptTokens: %d\n", resp.ResponseMeta.Usage.PromptTokens)
-	fmt.Printf("PromptTokenDetails: %d\n", resp.ResponseMeta.Usage.PromptTokenDetails)
-
-	time.Sleep(time.Second * 10)
-
-}
+//func main() {
+//	//// 加载 .env 文件
+//	//err := godotenv.Load()
+//	//if err != nil {
+//	//	log.Fatal("Error loading .env file:", err)
+//	//}
+//	//_ = Init()
+//	//start := time.Now()
+//	//r, err := BuildWenGoAgent(context.Background())
+//	//resp, err := r.Invoke(context.Background(), []string{"resource/esseay/3.jpeg", "resource/esseay/2.jpeg", "resource/esseay/1.jpeg"}, compose.WithCallbacks(cbHandler))
+//	//duration := time.Since(start)
+//	//log.Printf("操作完成，耗时: %v", duration)
+//	//
+//	//fmt.Println(resp.Content)
+//	//fmt.Printf("CompletionTokens: %d\n", resp.ResponseMeta.Usage.CompletionTokens)
+//	//fmt.Printf("TotalTokens: %d\n", resp.ResponseMeta.Usage.TotalTokens)
+//	//fmt.Printf("PromptTokens: %d\n", resp.ResponseMeta.Usage.PromptTokens)
+//	//fmt.Printf("PromptTokenDetails: %d\n", resp.ResponseMeta.Usage.PromptTokenDetails)
+//	//
+//	//time.Sleep(time.Second * 10)
+//
+//}
 
 var cbHandler callbacks.Handler
 
